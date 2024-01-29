@@ -4,12 +4,14 @@ setup(
     name="alexml",
     version="1.0",
     author="Alex Matsumura",
-    description="pytorch wrapper",
+    description="My own high-level PyTorch API",
     packages=find_packages(),
     install_requires=[
         "pytorch",
         "numpy",
-        "tqdm"
+        "tqdm",
+        "torchvision",
+        "matplotlib"
     ],
     entry_points={
         
