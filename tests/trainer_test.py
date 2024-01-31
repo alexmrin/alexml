@@ -19,12 +19,16 @@ class TestModel(nn.Module):
         super().__init__()
         self.linear1 = nn.Linear(784, 30) 
         self.linear2 = nn.Linear(30, 10)
+        self.dropout = nn.Dropout(p=0.4)
         self.bn = nn.BatchNorm1d(30)
 
     def forward(self, x):
         x = x.view(-1, 784)
         x = self.linear1(x)
-        return self.linear2(self.bn(F.relu(x)))
+        x = F.relu(x)
+        x = self.bn(x)
+        x = self.dropout(x)
+        return self.linear2(x)
 
 transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
 train_dataset = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
@@ -32,8 +36,8 @@ eval_dataset = datasets.MNIST(root='./data', train=False, transform=transform)
 
 # Set up training arguments
 args = TrainingArgs(
-    lr=0.0005,
-    num_epochs=3,
+    lr=0.001,
+    num_epochs=10,
     batch_size=128,
     save_steps=500,
 )
@@ -47,7 +51,8 @@ trainer = Trainer(
     train_dataset=train_dataset,
     eval_dataset=eval_dataset,
     optimizer=optim.AdamW,
-    criterion=nn.CrossEntropyLoss
+    criterion=nn.CrossEntropyLoss,
+    metrics=["accuracy", "recall", "precision", "f1"]
 )
 
 if __name__ == "__main__":

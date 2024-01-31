@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from alexml.utils import check_type, exponential_moving_average
+import alexml.training.supported as supported
+import alexml.training.metrics
 
 class TrainingArgs():
     """
@@ -115,7 +117,8 @@ class Trainer():
         eval_dataset: Optional[Dataset]= None,
         optimizer: torch.optim.Optimizer = torch.optim.AdamW,
         criterion: nn.modules.loss._Loss = nn.CrossEntropyLoss,
-        lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = torch.optim.lr_scheduler.OneCycleLR
+        lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = torch.optim.lr_scheduler.OneCycleLR,
+        metrics: Optional[list] = None,
     ):
         check_type(model, nn.Module)
         check_type(args, TrainingArgs)
@@ -140,6 +143,13 @@ class Trainer():
         self.eval_losses = []
         self.current_epoch = 0
         self.current_step = 1
+        self.metrics = []
+        if metrics is not None:
+            for metric in metrics:
+                if metric in supported.supported_metrics:
+                    self.metrics.append(supported.supported_metrics[metric])
+                else:
+                    raise ValueError("Metric not supported.")
 
     def plot(self) -> None:
         """
@@ -279,11 +289,17 @@ class Trainer():
                 total_loss += loss.item()
                 self.eval_losses.append(loss.item())
                 total_samples += inputs.shape[0]
+                for metric in self.metrics:
+                    metric.step(preds, labels)
             total_loss /= total_samples
             if batch:
                 print(f"step {self.current_step} eval loss: {total_loss}")
+                for metric in self.metrics:
+                    print(f"step {self.current_step} {metric.__class__.__name__}: {metric.compute()}")
             else:
                 print(f"Epoch {epoch} eval loss: {total_loss}")
+                for metric in self.metrics:
+                    print(f"Epoch {epoch} {metric.__class__.__name__}: {metric.compute()}")
     
     def _save_checkpoint(self, final: bool = False) -> None:
         """
