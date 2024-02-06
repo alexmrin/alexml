@@ -17,22 +17,37 @@ from alexml.training import Trainer, TrainingArgs
 class TestModel(nn.Module):
     def __init__(self):
         super().__init__()
-        self.linear1 = nn.Linear(784, 30) 
-        self.linear2 = nn.Linear(30, 10)
-        self.dropout = nn.Dropout(p=0.4)
-        self.bn = nn.BatchNorm1d(30)
+        self.convs = nn.Sequential(
+            nn.Conv2d(3, 8, kernel_size=3, padding=1),
+            nn.BatchNorm2d(8),
+            nn.SiLU(),
+            nn.Conv2d(8, 16, kernel_size=3, padding=1),
+            nn.BatchNorm2d(16),
+            nn.SiLU(),
+            nn.MaxPool2d(kernel_size=2),
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.BatchNorm2d(32),
+            nn.SiLU(),
+        )
+        self.global_avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Sequential(
+            nn.Linear(32, 64),
+            nn.BatchNorm1d(64),
+            nn.GELU(),
+            nn.Dropout(p=0.4),
+            nn.Linear(64, 10),
+        )
 
     def forward(self, x):
-        x = x.view(-1, 784)
-        x = self.linear1(x)
-        x = F.relu(x)
-        x = self.bn(x)
-        x = self.dropout(x)
-        return self.linear2(x)
+        x = self.convs(x)
+        x = self.global_avg_pool(x)
+        x = torch.flatten(x, 1)
+        x = self.fc(x)
+        return x
 
 transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
-train_dataset = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
-eval_dataset = datasets.MNIST(root='./data', train=False, transform=transform)
+train_dataset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
+eval_dataset = datasets.CIFAR10(root='./data', train=False, transform=transform)
 
 # Set up training arguments
 args = TrainingArgs(
