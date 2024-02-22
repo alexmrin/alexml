@@ -7,7 +7,7 @@ class Resnet50(nn.Module):
         self.conv1 = nn.Sequential(
             nn.Conv2d(3, 64, kernel_size=7, stride=2),
             nn.BatchNorm2d(64),
-            nn.SiLU(inplace=True),
+            nn.GELU(),
             nn.MaxPool2d(stride=2, kernel_size=2),
         )
         self.conv2 = nn.Sequential(
@@ -37,7 +37,7 @@ class Resnet50(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(1024, 1000),
             nn.BatchNorm1d(1000),
-            nn.SiLU(inplace=True),
+            nn.GELU(),
             nn.Dropout1d(p=0.5),
             nn.Linear(1000, 10),
         )
@@ -60,35 +60,34 @@ class ResBlock(nn.Module):
             self.conv1 = nn.Sequential(
                 nn.Conv2d(in_channels, squeeze_channels, kernel_size=1, stride=2),
                 nn.BatchNorm2d(squeeze_channels),
-                nn.SiLU(inplace=True)
+                nn.GELU()
             )
         else:
             self.conv1 = nn.Sequential(
                 nn.Conv2d(in_channels, squeeze_channels, kernel_size=1),
                 nn.BatchNorm2d(squeeze_channels),
-                nn.SiLU(inplace=True)
+                nn.GELU()
             )
         self.conv2 = nn.Sequential(
             nn.Conv2d(squeeze_channels, squeeze_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(squeeze_channels),
-            nn.SiLU(inplace=True)
+            nn.GELU()
         )
         self.conv3 = nn.Sequential(
             nn.Conv2d(squeeze_channels, out_channels, kernel_size=1),
             nn.BatchNorm2d(out_channels),
-            nn.SiLU(inplace=True)
         )
         self.identity = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=2 if downsample else 1),
             nn.BatchNorm2d(out_channels),
         ) if projection else nn.Identity()
-        self.silu = nn.SiLU()
+        self.gelu = nn.GELU()
 
     def forward(self, x):
         out = self.conv1(x)
         out = self.conv2(out)
         out = self.conv3(out)
-        return self.silu(out + self.identity(x))
+        return self.gelu(out + self.identity(x))
     
 def main(): 
     model = Resnet50()
