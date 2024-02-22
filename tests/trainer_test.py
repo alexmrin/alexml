@@ -52,8 +52,8 @@ eval_dataset = datasets.CIFAR10(root='./data', train=False, transform=transform)
 
 # Set up training arguments
 args = TrainingArgs(
-    lr=0.001,
-    num_epochs=10,
+    lr=0.0012,
+    num_epochs=150,
     batch_size=128,
     save_steps=500,
 )
