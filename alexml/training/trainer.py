@@ -7,6 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import numpy as np
+from torch.utils.tensorboard import SummaryWriter
 
 from alexml.utils import check_type, exponential_moving_average
 import alexml.training.supported as supported
@@ -119,6 +120,7 @@ class Trainer():
         criterion: nn.modules.loss._Loss = nn.CrossEntropyLoss,
         lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = torch.optim.lr_scheduler.OneCycleLR,
         metrics: Optional[list] = None,
+        log_dir: Optional[str] = None,
     ):
         check_type(model, nn.Module)
         check_type(args, TrainingArgs)
@@ -127,7 +129,13 @@ class Trainer():
         check_type(optimizer, torch.optim.Optimizer)
         check_type(criterion, nn.modules.loss._Loss)
         check_type(lr_scheduler, torch.optim.lr_scheduler._LRScheduler, allow_none=True)
+        check_type(log_dir, str, allow_none=True)
 
+        self.log = True
+        if log_dir is not None:
+            self.writer = SummaryWriter()
+        else:
+            self.log = False
         self.args = args
         self.model = model
         self.train_dataset = train_dataset
@@ -224,6 +232,8 @@ class Trainer():
             total_loss += loss
             total_samples += num_samples
         total_loss /= total_samples
+        if self.log:
+            self.writer.add_scalar("Loss/train", total_loss, self.current_epoch)
         print(f"Epoch: {epoch} train loss: {total_loss}")
 
     def _train_batch(self, inputs: torch.Tensor, labels: torch.Tensor) -> float:
@@ -292,6 +302,9 @@ class Trainer():
                 for metric in self.metrics:
                     metric.step(preds, labels)
             total_loss /= total_samples
+            self.writer.add_scalar('Loss/eval', total_loss, self.current_epoch)
+            for metric in self.metrics:
+                self.writer.add_scalar(f'Metrics/{metric.__class__.__name__}', metric.compute(), self.current_epoch)
             if batch:
                 print(f"step {self.current_step} eval loss: {total_loss}")
                 for metric in self.metrics:

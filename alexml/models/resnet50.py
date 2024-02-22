@@ -43,15 +43,15 @@ class Resnet50(nn.Module):
         )
 
     def forward(self, x) -> torch.Tensor:
-        out = self.conv1(x)
-        out = self.conv2(out)
-        out = self.conv3(out)
-        out = self.conv4(out)
-        out = self.conv5(out)
-        out = self.pooling(out)
-        out = torch.flatten(out, 1)
-        out = self.fc(out)
-        return out
+        output = self.conv1(x)
+        output = self.conv2(output)
+        output = self.conv3(output)
+        output = self.conv4(output)
+        output = self.conv5(output)
+        output = self.pooling(output)
+        output = torch.flatten(output, 1)
+        output = self.fc(output)
+        return output
 
 class ResBlock(nn.Module):
     def __init__(self, in_channels, out_channels, squeeze_channels, downsample=False, projection=False):
@@ -84,10 +84,10 @@ class ResBlock(nn.Module):
         self.gelu = nn.GELU()
 
     def forward(self, x):
-        out = self.conv1(x)
-        out = self.conv2(out)
-        out = self.conv3(out)
-        return self.gelu(out + self.identity(x))
+        output = self.conv1(x)
+        output = self.conv2(output)
+        output = self.conv3(output)
+        return self.gelu(output + self.identity(x))
     
 def main(): 
     model = Resnet50()

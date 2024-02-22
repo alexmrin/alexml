@@ -12,7 +12,7 @@ alexml_path = os.path.join("..", "alexml")
 sys.path.append(alexml_path)
 
 from alexml.training import Trainer, TrainingArgs
-from alexml.models import Resnet50
+from alexml.models import Resnet18
 
 # Define a simple linear model
 class TestModel(nn.Module):
@@ -52,13 +52,13 @@ eval_dataset = datasets.CIFAR10(root='./data', train=False, transform=transform)
 
 # Set up training arguments
 args = TrainingArgs(
-    lr=0.0012,
-    num_epochs=150,
+    lr=0.0015,
+    num_epochs=100,
     batch_size=128,
     save_steps=500,
 )
 
-model = Resnet50()
+model = Resnet18()
 
 # Instantiate the Trainer
 trainer = Trainer(
@@ -68,7 +68,7 @@ trainer = Trainer(
     eval_dataset=eval_dataset,
     optimizer=optim.AdamW,
     criterion=nn.CrossEntropyLoss,
-    metrics=["accuracy", "recall", "precision", "f1"]
+    metrics=["accuracy", "f1"]
 )
 
 if __name__ == "__main__":
