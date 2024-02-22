@@ -44,7 +44,7 @@ class ResBlock(nn.Module):
     def __init__(self, in_channels, out_channels, downsample=False) -> None:
         super().__init__()
         self.conv1 = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1) if downsample else nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, stride=2),
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, stride=2) if downsample else nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
             nn.GELU(),
         )
@@ -52,10 +52,10 @@ class ResBlock(nn.Module):
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
         )
-        self.identity = nn.Identity()
+        self.identity = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=2) if downsample else nn.Identity()
         self.gelu = nn.GELU()
 
     def forward(self, x):
         output = self.conv1(x)
-        output = self.conv2(x)
-        return self.gelu(output + self.identity)
+        output = self.conv2(output)
+        return self.gelu(output + self.identity(x))
