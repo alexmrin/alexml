@@ -11,25 +11,25 @@ class Resnet50(nn.Module):
             nn.MaxPool2d(stride=2, kernel_size=2),
         )
         self.conv2 = nn.Sequential(
-            ResBlock(64, 128, 32),
+            ResBlock(64, 128, 32, projection=True),
             ResBlock(128, 128, 32),
             ResBlock(128, 128, 32),
         )
         self.conv3 = nn.Sequential(
-            ResBlock(128, 256, 64, downsample=True),
+            ResBlock(128, 256, 64, downsample=True, projection=True),
             ResBlock(256, 256, 64),
             ResBlock(256, 256, 64),
             ResBlock(256, 256, 64),
         )
         self.conv4 = nn.Sequential(
-            ResBlock(256, 512, 128, downsample=True),
+            ResBlock(256, 512, 128, downsample=True, projection=True),
             ResBlock(512, 512, 128),
             ResBlock(512, 512, 128),
             ResBlock(512, 512, 128),
             ResBlock(512, 512, 128),
         )
         self.conv5 = nn.Sequential(
-            ResBlock(512, 1024, 256, downsample=True),
+            ResBlock(512, 1024, 256, downsample=True, projection=True),
             ResBlock(1024, 1024, 256),
             ResBlock(1024, 1024, 256),
         )
@@ -48,10 +48,13 @@ class Resnet50(nn.Module):
         out = self.conv3(out)
         out = self.conv4(out)
         out = self.conv5(out)
+        out = self.pooling(out)
+        out = torch.flatten(out, 1)
+        out = self.fc(out)
         return out
 
 class ResBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, squeeze_channels, downsample=False):
+    def __init__(self, in_channels, out_channels, squeeze_channels, downsample=False, projection=False):
         super().__init__()
         if downsample:
             self.conv1 = nn.Sequential(
@@ -75,18 +78,17 @@ class ResBlock(nn.Module):
             nn.BatchNorm2d(out_channels),
             nn.SiLU(inplace=True)
         )
-        if downsample:
-            self.identtiy = nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, kernel_size=1)
-            )
-        else:
-            self.identity = nn.Sequential()
+        self.identity = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=2 if downsample else 1),
+            nn.BatchNorm2d(out_channels),
+        ) if projection else nn.Identity()
+        self.silu = nn.SiLU()
 
     def forward(self, x):
         out = self.conv1(x)
         out = self.conv2(out)
         out = self.conv3(out)
-        return out + self.identity(x)
+        return self.silu(out + self.identity(x))
     
 def main(): 
     model = Resnet50()

@@ -12,6 +12,7 @@ alexml_path = os.path.join("..", "alexml")
 sys.path.append(alexml_path)
 
 from alexml.training import Trainer, TrainingArgs
+from alexml.models import Resnet50
 
 # Define a simple linear model
 class TestModel(nn.Module):
@@ -57,7 +58,7 @@ args = TrainingArgs(
     save_steps=500,
 )
 
-model = TestModel()
+model = Resnet50()
 
 # Instantiate the Trainer
 trainer = Trainer(
