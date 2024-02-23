@@ -302,9 +302,10 @@ class Trainer():
                 for metric in self.metrics:
                     metric.step(preds, labels)
             total_loss /= total_samples
-            self.writer.add_scalar('Loss/eval', total_loss, self.current_epoch)
-            for metric in self.metrics:
-                self.writer.add_scalar(f'Metrics/{metric.__class__.__name__}', metric.compute(), self.current_epoch)
+            if self.log:
+                self.writer.add_scalar('Loss/eval', total_loss, self.current_epoch)
+                for metric in self.metrics:
+                    self.writer.add_scalar(f'Metrics/{metric.__class__.__name__}', metric.compute(), self.current_epoch)
             if batch:
                 print(f"step {self.current_step} eval loss: {total_loss}")
                 for metric in self.metrics:

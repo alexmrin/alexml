@@ -59,3 +59,10 @@ class ResBlock(nn.Module):
         output = self.conv1(x)
         output = self.conv2(output)
         return self.gelu(output + self.identity(x))
+    
+def main(): 
+    model = Resnet18()
+    print(sum(p.numel() for p in model.parameters()))
+    
+if __name__ == "__main__":
+    main()
